@@ -2,6 +2,7 @@
 
 A production-ready **React Native + Expo** starter for iOS and Android, with **Supabase** authentication, user profiles and push notifications already wired up. Clone it, add your Supabase keys and start building your actual app on day one.
 
+[![CI](https://github.com/hassan-forge/expo-supabase-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/hassan-forge/expo-supabase-starter/actions/workflows/ci.yml)
 ![Expo SDK 58](https://img.shields.io/badge/Expo-SDK%2058-000020?logo=expo)
 ![React Native](https://img.shields.io/badge/React%20Native-0.88-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript)
@@ -32,7 +33,7 @@ A production-ready **React Native + Expo** starter for iOS and Android, with **S
 | Storage | expo-sqlite (`localStorage`) |
 | Auth | Supabase Auth, expo-web-browser, expo-apple-authentication, expo-crypto |
 | Notifications | expo-notifications, expo-device |
-| Quality | ESLint (eslint-config-expo), `tsc --noEmit` |
+| Quality | ESLint (eslint-config-expo), `tsc --noEmit`, GitHub Actions CI |
 
 ## Project structure
 
