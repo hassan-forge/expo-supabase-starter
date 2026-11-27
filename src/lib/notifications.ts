@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -68,4 +69,24 @@ export async function registerForPushNotifications(userId: string): Promise<Push
   if (error) throw error;
 
   return { status: 'registered', token };
+}
+
+/**
+ * Asks the `send-push` Edge Function to notify this user's registered device.
+ * The function reads the token server-side, so the app never sends tokens around.
+ */
+export async function sendTestNotification(): Promise<void> {
+  const { error } = await supabase.functions.invoke('send-push', {
+    body: {
+      title: 'Hello from Supabase',
+      body: 'This notification was sent by the send-push Edge Function.',
+      data: { screen: 'home' },
+    },
+  });
+  if (!error) return;
+  if (error instanceof FunctionsHttpError) {
+    const details = (await error.context.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(details?.error ?? 'The send-push function returned an error.');
+  }
+  throw error;
 }

@@ -1,6 +1,6 @@
 # Expo Supabase Starter
 
-A production-ready **React Native + Expo** starter for iOS and Android, with **Supabase** authentication, user profiles and push notifications already wired up. Clone it, add your Supabase keys and start building your actual app on day one.
+A production-ready **React Native + Expo** starter for iOS and Android, with a **Supabase** backend: authentication, user profiles with row level security, and push notifications sent from an Edge Function, all already wired up. Clone it, add your Supabase keys and start building your actual app on day one.
 
 [![CI](https://github.com/hassan-forge/expo-supabase-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/hassan-forge/expo-supabase-starter/actions/workflows/ci.yml)
 ![Expo SDK 58](https://img.shields.io/badge/Expo-SDK%2058-000020?logo=expo)
@@ -20,6 +20,7 @@ A production-ready **React Native + Expo** starter for iOS and Android, with **S
 - 💾 **Persistent sessions** stored with `expo-sqlite`'s `localStorage`, auto-refreshed only while the app is in the foreground
 - 👤 **User profiles** in Postgres, created automatically on sign-up and protected by row level security
 - 🔔 **Push notifications**: permission flow, Android channel and the device's Expo push token saved to the user's profile
+- ⚡ **Supabase Edge Function** (`send-push`) that sends a notification to the signed-in user's device through the Expo push API, runs every query under the caller's own permissions, and clears tokens Expo reports as dead
 - 📱 **Native tabs** (SF Symbols on iOS, Material icons on Android)
 - 🌗 **Light and dark mode** with a small theme and reusable UI components
 - ✅ **Strict TypeScript**, typed Supabase queries and ESLint
@@ -29,11 +30,11 @@ A production-ready **React Native + Expo** starter for iOS and Android, with **S
 | Area | Tools |
 | --- | --- |
 | App | React Native 0.88, Expo SDK 58, Expo Router, TypeScript |
-| Backend | Supabase (Auth, Postgres, row level security) |
+| Backend | Supabase (Auth, Postgres, row level security, Edge Functions on Deno) |
 | Storage | expo-sqlite (`localStorage`) |
 | Auth | Supabase Auth, expo-web-browser, expo-apple-authentication, expo-crypto |
 | Notifications | expo-notifications, expo-device |
-| Quality | ESLint (eslint-config-expo), `tsc --noEmit`, GitHub Actions CI |
+| Quality | ESLint (eslint-config-expo), `tsc --noEmit`, Deno tests for the Edge Function, GitHub Actions CI |
 
 ## Project structure
 
@@ -55,6 +56,10 @@ src/
     auth-provider.tsx      Session state for the whole app
 supabase/
   migrations/              SQL for the profiles table, RLS policies and sign-up trigger
+  functions/send-push/
+    index.ts               Edge Function: auth check, profile lookup under RLS, Expo push call
+    push.ts                Input validation, Expo request and ticket handling (no I/O)
+    push_test.ts           Unit tests, run with `deno test`
 ```
 
 ## Getting started
@@ -104,7 +109,26 @@ Link the project to EAS so the app has a project ID, then build on a physical de
 npx eas-cli@latest init
 ```
 
-Tap **Enable push notifications** on the Home tab. The device's Expo push token is saved in `profiles.expo_push_token`, so your backend can send messages with the [Expo push API](https://docs.expo.dev/push-notifications/sending-notifications/).
+Tap **Enable push notifications** on the Home tab. The device's Expo push token is saved in `profiles.expo_push_token`.
+
+To send notifications from the backend, deploy the Edge Function:
+
+```bash
+npx supabase login
+npx supabase link --project-ref your-project-ref
+npx supabase functions deploy send-push
+# only if "enhanced push security" is on for your Expo project:
+npx supabase secrets set EXPO_ACCESS_TOKEN=your-expo-access-token
+```
+
+Then tap **Send a test notification** on the Home tab. The app calls the function with the user's session; the function reads that user's token under row level security and sends the message through the [Expo push API](https://docs.expo.dev/push-notifications/sending-notifications/). A user can only ever notify their own device. Other server code (a cron job, a database webhook) can call the same function or reuse `push.ts`.
+
+Run the function's tests with [Deno](https://deno.com):
+
+```bash
+cd supabase/functions/send-push
+deno test
+```
 
 ## Scripts
 

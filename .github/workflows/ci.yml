@@ -24,3 +24,25 @@ jobs:
 
       - name: Type-check
         run: npm run typecheck
+
+  edge-functions:
+    name: Edge Function tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supabase/functions/send-push
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Lint
+        run: deno lint
+
+      - name: Type-check
+        run: deno check index.ts
+
+      - name: Tests
+        run: deno test

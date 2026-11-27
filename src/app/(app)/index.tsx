@@ -9,13 +9,14 @@ import { Screen } from '@/components/ui/screen';
 import { Spacing } from '@/constants/theme';
 import { useProfile } from '@/hooks/use-profile';
 import { getErrorMessage } from '@/lib/errors';
-import { registerForPushNotifications } from '@/lib/notifications';
+import { registerForPushNotifications, sendTestNotification } from '@/lib/notifications';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function HomeScreen() {
   const { session } = useAuth();
   const { profile, reload } = useProfile();
   const [registering, setRegistering] = useState(false);
+  const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: 'error' | 'success' } | null>(null);
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there';
@@ -39,6 +40,21 @@ export default function HomeScreen() {
       setMessage({ text: getErrorMessage(e), tone: 'error' });
     } finally {
       setRegistering(false);
+    }
+  }
+
+  async function sendTest() {
+    setSending(true);
+    setMessage(null);
+    try {
+      await sendTestNotification();
+      setMessage({ text: 'Test notification sent. It should arrive in a few seconds.', tone: 'success' });
+    } catch (e) {
+      setMessage({ text: getErrorMessage(e), tone: 'error' });
+      // The function clears tokens Expo reports as dead, so refresh what we show.
+      await reload();
+    } finally {
+      setSending(false);
     }
   }
 
@@ -71,8 +87,18 @@ export default function HomeScreen() {
           title={pushEnabled ? 'Re-register this device' : 'Enable push notifications'}
           variant={pushEnabled ? 'secondary' : 'primary'}
           loading={registering}
+          disabled={sending}
           onPress={enablePush}
         />
+        {pushEnabled && (
+          <Button
+            title="Send a test notification"
+            variant="ghost"
+            loading={sending}
+            disabled={registering}
+            onPress={sendTest}
+          />
+        )}
       </ThemedView>
     </Screen>
   );
